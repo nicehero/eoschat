@@ -1,0 +1,190 @@
+<center>
+	<div>
+		<div>yourPrivateKey</div>
+		<input type="text" id="privateKey" size="30" style="font-size:20px;" value="5JamVnrEocpLxf4fBfLGqHYCnvs2ACivDND8JtQ5pb6tiRfUTSj"></input>
+	</div>
+	<div>	
+		<div>yourAccountName</div>
+		<input type="text" id="accountName" size="30" style="font-size:20px;" value = "eoschattest"></input>
+	</div>
+	<div>	
+		<div>receiver</div>
+		<input type="text" id="receiver" value="" size="30" style="font-size:20px;"></input>
+	</div>
+	<div>	
+		<div>data</div>
+		<input type="text" id="sendData" value="" size="30" style="font-size:20px;"></input>
+	</div>
+	<div>	
+		<input type="button" id="send" value="send" onclick="doSend()"></input>
+	</div>
+	<div>	
+		<div>delID</div>
+		<input type="text" id="delID" value="" size="30" style="font-size:20px;"></input>
+		<div>
+		<input type="button" id="delMsg" value="delMsg" onclick="doDelMsg()"></input>
+		</div>
+	</div>
+	<div>	
+		<div>showMsgs</div>
+		<input type="text" id="jump" value="0" size="30" style="font-size:20px;"></input>
+		<input type="button" id="showMsgs" value="showMsgs" onclick="doShowMsgs()"></input>
+	</div>
+		
+</center>
+<pre style="width: 100%; height: 100%; margin:0px; "></pre>
+
+<script src='dist-web/eosjs2-debug.js'></script>
+<script src='dist-web/eosjs2-jsonrpc-debug.js'></script>
+<script src='dist-web/eosjs2-jssig-debug.js'></script>
+<script>
+    var pre = document.getElementsByTagName('pre')[0];
+    var rpc = new eosjs2_jsonrpc.JsonRpc('http://193.93.219.219:8888');
+    var signatureProvider = null;//new eosjs2_jssig.default(['']);
+    var api = null;//new eosjs2.Api({ rpc, signatureProvider });
+	
+	var codeAccount = "eoschat";
+	var myAccount = "";
+	
+	var sendMsg = (to,dataType,data) => {
+		pre.textContent = "";
+		let fr = myAccount;
+		(async () => {
+			try {
+				let result = await api.pushTransaction({
+					blocksBehind: 3,
+					expireSeconds: 10,
+					actions: [{
+						account: codeAccount,
+						name: "send",
+						authorization: [{
+							actor: myAccount,
+							permission: 'active',
+						}],
+						data: {"from":fr,to,encrypt:false,dataType,data},
+					}],
+				});
+				pre.textContent += '\n\nTransaction pushed!\n\n' + JSON.stringify(result, null, 4);
+			} catch (e) {
+				pre.textContent += '\nCaught exception: ' + e;
+				if (e instanceof eosjs2_jsonrpc.RpcError)
+					pre.textContent += '\n\n' + JSON.stringify(e.json, null, 4);
+			}
+		})();
+	}
+	var setTag = (tag) => {
+		pre.textContent = "";
+		let owner = myAccount;
+		(async () => {
+			try {
+				let result = await api.pushTransaction({
+					blocksBehind: 3,
+					expireSeconds: 10,
+					actions: [{
+						account: codeAccount,
+						name: "tag",
+						authorization: [{
+							actor: myAccount,
+							permission: 'active',
+						}],
+						data: {owner,tag},
+					}],
+				});
+				pre.textContent += '\n\nTransaction pushed!\n\n' + JSON.stringify(result, null, 4);
+			} catch (e) {
+				pre.textContent += '\nCaught exception: ' + e;
+				if (e instanceof eosjs2_jsonrpc.RpcError)
+					pre.textContent += '\n\n' + JSON.stringify(e.json, null, 4);
+			}
+		})();
+	}
+	var delMsg = (pkey) => {
+		pre.textContent = "";
+		(async () => {
+			try {
+				let result = await api.pushTransaction({
+					blocksBehind: 3,
+					expireSeconds: 10,
+					actions: [{
+						account: codeAccount,
+						name: "del",
+						authorization: [{
+							actor: myAccount,
+							permission: 'active',
+						}],
+						data: {pkey},
+					}],
+				});
+				pre.textContent += '\n\nTransaction pushed!\n\n' + JSON.stringify(result, null, 4);
+			} catch (e) {
+				pre.textContent += '\nCaught exception: ' + e;
+				if (e instanceof eosjs2_jsonrpc.RpcError)
+					pre.textContent += '\n\n' + JSON.stringify(e.json, null, 4);
+			}
+		})();
+	}
+	var getMsgs = (lower_bound,callback) => {
+		if (lower_bound == null)
+		{
+			lower_bound = '';
+		}
+		else 
+		{
+			lower_bound = '' + lower_bound;
+		}
+		pre.textContent = "";
+		(async () => {let result = await api.rpc.get_table_rows({
+			code:codeAccount,scope:codeAccount,table:"msg",table_key:"",
+			lower_bound, upper_bound:''
+			});
+			if (typeof callback == "function")
+			{
+				callback(result);
+			}
+		})();
+	}
+	var printTags = () => {
+		pre.textContent = "";
+		(async () => {let result = await api.rpc.get_table_rows({
+			code:codeAccount,scope:codeAccount,table:"readtag",table_key:""
+			});
+			console.log(result);
+		})();
+	}
+	function doSend()
+	{
+		if (document.getElementById("receiver").value == "")
+		{
+			alert("please type receiver");
+			return;
+		}
+		if (document.getElementById("sendData").value == "")
+		{
+			alert("please type sendData");
+			return;
+		}
+		signatureProvider = new eosjs2_jssig.default([document.getElementById("privateKey").value]);
+    	api = new eosjs2.Api({ rpc, signatureProvider });
+		myAccount = document.getElementById("accountName").value;
+		sendMsg(
+			document.getElementById("receiver").value,1,
+			document.getElementById("sendData").value,
+		);
+	}
+	function doShowMsgs()
+	{
+		signatureProvider = new eosjs2_jssig.default([document.getElementById("privateKey").value]);
+    	api = new eosjs2.Api({ rpc, signatureProvider });
+		getMsgs(document.getElementById("jump").value,(r)=>{pre.textContent = JSON.stringify(r, null, 4)})
+	}
+	function doDelMsg()
+	{
+		if (document.getElementById("delID").value == "")
+		{
+			alert("please type number delID");
+			return;
+		}
+		signatureProvider = new eosjs2_jssig.default([document.getElementById("privateKey").value]);
+		delMsg(document.getElementById("delID").value);
+	}
+</script>
