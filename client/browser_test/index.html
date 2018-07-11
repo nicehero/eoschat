@@ -88,7 +88,7 @@
 			}
 		})();
 	}
-	var getMsgs = (lower_bound,callback) => {
+	var getMsgs = (lower_bound,upper_bound,callback) => {
 		if (lower_bound == null)
 		{
 			lower_bound = '';
@@ -99,8 +99,8 @@
 		}
 		document.getElementsByTagName('pre')[0].textContent = "";
 		(async () => {let result = await api.rpc.get_table_rows({
-			code:codeAccount,scope:codeAccount,table:"msg",table_key:"",
-			lower_bound, upper_bound:''
+			code:codeAccount,scope:codeAccount,table:"msgt",table_key:"",
+			lower_bound, upper_bound
 			});
 			if (typeof callback == "function")
 			{
@@ -140,7 +140,7 @@
 	{
 		signatureProvider = new eosjs2_jssig.default([document.getElementById("privateKey").value]);
     	api = new eosjs2.Api({ rpc, signatureProvider });
-		getMsgs(document.getElementById("jump").value,(r)=>{document.getElementsByTagName('pre')[0].textContent = JSON.stringify(r, null, 4)})
+		getMsgs(document.getElementById("jump").value,document.getElementById("jump2").value,(r)=>{document.getElementsByTagName('pre')[0].textContent = JSON.stringify(r, null, 4)})
 	}
 	function doDelMsg()
 	{
@@ -183,7 +183,8 @@
 	</div>
 	<div>	
 		<div>showMsgs</div>
-		<input type="text" id="jump" value="0" size="30" style="font-size:20px;"></input>
+		<input type="text" id="jump" value="0" size="15" style="font-size:20px;"></input>
+		<input type="text" id="jump2" value="" size="15" style="font-size:20px;"></input>
 		<input type="button" id="showMsgs" value="showMsgs" onclick="doShowMsgs()"></input>
 	</div>
 		

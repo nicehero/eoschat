@@ -4,11 +4,15 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/contract.hpp>
 #include <eosiolib/crypto.h>
+#include <eosiolib/system.h>
 
 using eosio::indexed_by;
 using eosio::const_mem_fun;
 using eosio::print;
 using eosio::name;
+using eosio::permission_level;
+using eosio::action;
+using eosio::pack;
 
 class eoschat : public eosio::contract 
 {
@@ -27,7 +31,7 @@ public:
 	void send(const account_name from,const account_name to,bool encrypt,uint16_t dataType,std::string data)
 	{
 		require_auth(from);
-		msgs.emplace(from,
+		auto itr = msgs.emplace(from,
 		[&](auto& m){
 			m.pkey = getMaxID();
 			m.to = to;
@@ -35,7 +39,19 @@ public:
 			m.encrypt = encrypt;
 			m.dataType = dataType;
             m.data = data;
+			m.t = current_time();
 		});
+		//auto a = action();
+		//a.account = N(eoschatcoin);
+		//a.name = N(mine);
+		//a.data = pack(std::make_tuple(_self,from,to,itr->pkey));
+		//a.send();
+		
+		action(
+			permission_level{ _self, N(active) },
+			N(eoschatcoin), N(mine),
+			std::make_tuple(_self,from,to,itr->pkey)
+		).send();
 	}
 	
 	/// @abi action 
@@ -81,8 +97,8 @@ public:
 
 private:
 	
-	//@abi table msg i64
-	struct msg
+	//@abi table msgt i64
+	struct msgt
 	{
 		uint64_t pkey;
 		account_name to;
@@ -90,16 +106,17 @@ private:
 		bool encrypt;
 		uint16_t dataType;
 		std::string data;
+		uint64_t t;
 
 		uint64_t primary_key()const { return pkey; }
 		account_name by_to()const { return to; }
 
-		EOSLIB_SERIALIZE( msg, (pkey)(to)(from)(encrypt)(dataType)(data) )
+		EOSLIB_SERIALIZE( msgt, (pkey)(to)(from)(encrypt)(dataType)(data)(t) )
 	};
-	typedef eosio::multi_index< N(msg), msg,
-		indexed_by< N(to), const_mem_fun<msg, account_name, &msg::by_to > > 
-	> msg_index;
-	msg_index msgs;
+	typedef eosio::multi_index< N(msgt), msgt,
+		indexed_by< N(to), const_mem_fun<msgt, account_name, &msgt::by_to > > 
+	> msgt_index;
+	msgt_index msgs;
 
 	//@abi table readtag i64
 	struct readtag
