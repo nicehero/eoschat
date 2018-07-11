@@ -1,0 +1,3 @@
+[submodule "client/browserTest"]
+	path = client/browserTest
+	url = https://github.com/nicehero/eoschatBrowserTest
