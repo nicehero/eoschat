@@ -22,7 +22,8 @@ public:
 		eosio::contract(self),
 		msgs(_self, _self),
 		readtags(_self,_self),
-		maxids(_self,_self)
+		maxids(_self,_self),
+		upuks(_self,_self)
 	{
 	  
 	}
@@ -91,6 +92,31 @@ public:
 			[&](auto& rt){
 				rt.owner = owner;
 				rt.tag = tag;
+            });
+		}
+	}
+	
+	/// @abi action 
+	void setpubkey(account_name owner,std::string pubkey)
+	{
+		require_auth(owner);
+		auto itr = upuks.find(owner);
+		if (itr == upuks.end())
+		{
+			upuks.emplace(owner,
+			[&](auto& u){
+				u.user = owner;
+				u.pubkey = pubkey;
+				u.version = 1;
+			});
+		}
+		else
+		{
+			upuks.modify(itr, owner,
+			[&](auto& u){
+				u.user = owner;
+				u.pubkey = pubkey;
+				++ u.version;
             });
 		}
 	}
@@ -167,8 +193,22 @@ private:
 	typedef eosio::multi_index< N(maxid), maxid> maxid_index;
 	maxid_index maxids;
 
+	//@abi table upuk i64
+	struct upuk // user public key
+	{
+		account_name user;
+		std::string pubkey;
+		uint64_t version;
+
+		uint64_t primary_key()const { return user; }
+
+		EOSLIB_SERIALIZE( upuk, (user)(pubkey)(version) )
+	};
+	eosio::multi_index< N(upuk), upuk> upuks;
+
+
 };
 
-EOSIO_ABI( eoschat, (send)(del)(tag) )
+EOSIO_ABI( eoschat, (send)(del)(tag)(setpubkey) )
 
 
