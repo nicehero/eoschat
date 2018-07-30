@@ -40,7 +40,7 @@ public:
 			m.encrypt = encrypt;
 			m.dataType = dataType;
             m.data = data;
-			m.t = current_time();
+			m.tot = (uint128_t(to) << 64) + uint128_t(current_time());
 		});
 		//auto a = action();
 		//a.account = N(eoschatcoin);
@@ -123,7 +123,7 @@ public:
 
 private:
 	
-	//@abi table msgt i64
+	//@abi table msgtt i64
 	struct msgt
 	{
 		uint64_t pkey;
@@ -132,15 +132,17 @@ private:
 		bool encrypt;
 		uint16_t dataType;
 		std::string data;
-		uint64_t t;
+		uint128_t tot;
 
 		uint64_t primary_key()const { return pkey; }
 		account_name by_to()const { return to; }
+		uint128_t by_tot()const { return tot; }
 
-		EOSLIB_SERIALIZE( msgt, (pkey)(to)(from)(encrypt)(dataType)(data)(t) )
+		EOSLIB_SERIALIZE( msgt, (pkey)(to)(from)(encrypt)(dataType)(data)(tot) )
 	};
-	typedef eosio::multi_index< N(msgt), msgt,
-		indexed_by< N(to), const_mem_fun<msgt, account_name, &msgt::by_to > > 
+	typedef eosio::multi_index< N(msgtt), msgt,
+		indexed_by< N(byto), const_mem_fun<msgt, account_name, &msgt::by_to > > ,
+		indexed_by< N(bytot), const_mem_fun<msgt, uint128_t, &msgt::by_tot > > 
 	> msgt_index;
 	msgt_index msgs;
 
